@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-
-       <!-- Primary Meta Tags -->
+    <!-- Primary Meta Tags -->
     <title>igmovies - Watch Latest Movies Online in HD</title>
     <meta name="title" content="watch full movies hindi HD">
     <meta name="description" content="watch and download the latest movies in HD quality. Huge collection of movies updated daily. Free streaming platform.">
@@ -40,20 +38,19 @@
     <!-- Reddit Optimization -->
     <meta name="robots" content="noarchive">
 
+    <!-- Preload critical resources -->
+    <link rel="preload" href="images/logo.png" as="image">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
 
-        <!-- Google tag (gtag.js) -->
+    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GTYQF2K0FW"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-GTYQF2K0FW');
     </script>
 
-
-
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>igmovies - Stream Movies & TV Shows</title>
@@ -82,6 +79,8 @@
             color: var(--text-light);
             line-height: 1.6;
             min-height: 100vh;
+            /* Prevent horizontal scroll */
+            overflow-x: hidden;
         }
 
         /* Header Styles */
@@ -115,6 +114,8 @@
             width: auto;
             filter: drop-shadow(0 0 5px rgba(37, 99, 235, 0.5));
             transition: var(--transition);
+            /* Prevent layout shift by setting explicit dimensions */
+            min-width: 40px;
         }
 
         .logo:hover {
@@ -225,6 +226,8 @@
             transition: var(--transition);
             border: 1px solid var(--border);
             position: relative;
+            /* Prevent content jump on hover */
+            transform: translateZ(0);
         }
 
         .card:hover {
@@ -239,6 +242,8 @@
             position: relative;
             overflow: hidden;
             background: var(--bg-card);
+            /* Prevent layout shift */
+            min-height: 240px;
         }
 
         .card-image img {
@@ -247,6 +252,10 @@
             object-fit: cover;
             transition: transform 0.5s ease;
             opacity: 0;
+            /* Prevent layout shift during loading */
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         .card-image img.loaded {
@@ -269,6 +278,8 @@
             justify-content: center;
             color: var(--text-muted);
             font-size: 12px;
+            /* Prevent layout shift */
+            z-index: 1;
         }
 
         .card-overlay {
@@ -280,6 +291,7 @@
             padding: 10px;
             opacity: 0;
             transition: var(--transition);
+            z-index: 2;
         }
 
         .card:hover .card-overlay {
@@ -310,6 +322,8 @@
             transition: var(--transition);
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            /* Better touch targets on mobile */
+            min-height: 44px;
         }
 
         .watch-btn:hover {
@@ -362,6 +376,8 @@
             font-size: 11px;
             border: 1px solid var(--border);
             font-weight: 500;
+            height: 100%;
+            width: 100%;
         }
 
         /* Footer */
@@ -407,6 +423,9 @@
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
+            /* Better touch targets on mobile */
+            min-height: 44px;
+            min-width: 140px;
         }
 
         .load-more-btn:hover {
@@ -431,6 +450,7 @@
 
             .logo {
                 height: 32px;
+                min-width: 32px;
             }
 
             .hero {
@@ -467,6 +487,10 @@
                 flex-wrap: wrap;
                 gap: 15px;
             }
+
+            .card-image {
+                min-height: 200px;
+            }
         }
 
         @media (min-width: 768px) {
@@ -502,7 +526,7 @@
     <header class="header">
         <div class="header-container">
             <div class="logo-container">
-                <img src="images/logo.png" alt="igmovies Logo" class="logo">
+                <img src="images/logo.png" alt="igmovies Logo" class="logo" width="40" height="40">
                 <h1 class="platform-name">igmovies</h1>
             </div>
 
@@ -557,6 +581,7 @@
         let allCards = [];
         let currentBatchIndex = 0;
         let batchSize = 20; // Default for mobile
+        let hasLooped = false; // Track if we've looped through all content
 
         // Function to determine batch size based on screen width
         function getBatchSize() {
@@ -581,7 +606,7 @@
                     <div class="card-image">
                         <div class="image-placeholder">Loading...</div>
                         <img data-src="${imagePath}" alt="Movie ${cardData.id}" 
-                             onerror="this.classList.remove('loaded'); this.parentElement.innerHTML='<div class=\'image-error\'>Image<br>Not Found</div>'">
+                             onerror="handleImageError(this)">
                         <div class="card-overlay">
                             <div class="card-title">Movie ${cardData.id}</div>
                             <div class="card-meta">${cardData.year} • Rating: ${cardData.rating}</div>
@@ -594,9 +619,23 @@
             `;
         }
 
+        // Handle image loading errors
+        function handleImageError(img) {
+            img.classList.remove('loaded');
+            const parent = img.parentElement;
+            parent.innerHTML = '<div class="image-error">Image<br>Not Found</div>';
+        }
+
         // Function to load a batch of cards
         function loadCardBatch() {
             const batchSize = getBatchSize();
+
+            // If we've reached the end, reset the index to create a loop
+            if (currentBatchIndex >= allCards.length) {
+                currentBatchIndex = 0;
+                hasLooped = true;
+            }
+
             const batch = allCards.slice(currentBatchIndex, currentBatchIndex + batchSize);
             currentBatchIndex += batch.length;
 
@@ -617,7 +656,7 @@
             // Update load more button state
             updateLoadMoreButton();
 
-            console.log(`Loaded batch of ${batch.length} cards. Total loaded: ${currentBatchIndex}`);
+            console.log(`Loaded batch of ${batch.length} cards. Total loaded: ${currentBatchIndex}, Has looped: ${hasLooped}`);
         }
 
         // Function to update load more button state
@@ -625,14 +664,10 @@
             const loadMoreBtn = document.getElementById('loadMoreBtn');
             const loadMoreContainer = document.getElementById('loadMoreContainer');
 
-            if (currentBatchIndex >= allCards.length) {
-                loadMoreBtn.disabled = true;
-                loadMoreBtn.textContent = 'All Movies Loaded';
-            } else {
-                loadMoreBtn.disabled = false;
-                loadMoreBtn.textContent = 'Load More';
-                loadMoreContainer.style.display = 'block';
-            }
+            // Always show the button and enable it for infinite loading
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.textContent = 'Load More Movies';
+            loadMoreContainer.style.display = 'block';
         }
 
         // Simple lazy loading implementation
@@ -644,19 +679,13 @@
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
                             const img = entry.target;
-                            img.src = img.dataset.src;
-                            img.onload = () => {
-                                img.classList.add('loaded');
-                                img.removeAttribute('data-src');
-                                // Remove the placeholder
-                                const placeholder = img.previousElementSibling;
-                                if (placeholder && placeholder.classList.contains('image-placeholder')) {
-                                    placeholder.style.display = 'none';
-                                }
-                            };
+                            loadImage(img);
                             imageObserver.unobserve(img);
                         }
                     });
+                }, {
+                    // Load images slightly before they enter the viewport
+                    rootMargin: '50px 0px'
                 });
 
                 images.forEach(img => imageObserver.observe(img));
@@ -665,16 +694,7 @@
                 const lazyLoad = () => {
                     images.forEach(img => {
                         if (img.getBoundingClientRect().top < window.innerHeight + 200) {
-                            img.src = img.dataset.src;
-                            img.onload = () => {
-                                img.classList.add('loaded');
-                                img.removeAttribute('data-src');
-                                // Remove the placeholder
-                                const placeholder = img.previousElementSibling;
-                                if (placeholder && placeholder.classList.contains('image-placeholder')) {
-                                    placeholder.style.display = 'none';
-                                }
-                            };
+                            loadImage(img);
                         }
                     });
                 };
@@ -687,6 +707,20 @@
             }
         }
 
+        // Function to load an individual image
+        function loadImage(img) {
+            img.src = img.dataset.src;
+            img.onload = () => {
+                img.classList.add('loaded');
+                img.removeAttribute('data-src');
+                // Remove the placeholder
+                const placeholder = img.previousElementSibling;
+                if (placeholder && placeholder.classList.contains('image-placeholder')) {
+                    placeholder.style.display = 'none';
+                }
+            };
+        }
+
         // Store platform data globally
         let platformData = {};
 
@@ -696,6 +730,10 @@
                 // Preload logo for faster display
                 const logoImg = new Image();
                 logoImg.src = 'images/logo.png';
+                logoImg.onload = () => {
+                    // Logo is loaded, we can use it now
+                    console.log('Logo preloaded successfully');
+                };
 
                 // Fetch the external JSON file
                 const response = await fetch('list.json');
@@ -710,6 +748,9 @@
                 // Update header logo with proper path
                 const logoElement = document.querySelector('.logo');
                 logoElement.src = `images/${data.logo}`;
+                // Set explicit dimensions to prevent layout shift
+                logoElement.width = 40;
+                logoElement.height = 40;
 
                 // Shuffle the content array
                 allCards = shuffleArray(data.content);
